@@ -1,67 +1,39 @@
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const app = express();
+const mongoose = require("mongoose");
+const userRoutes = require("./routes/user"); // Importamos las rutas de usuarios
+const cardRoutes = require("./routes/card"); // Importamos las rutas de tarjetas
 
-// Configurar el puerto
+const app = express();
 const PORT = 3000;
 
-// Ruta para obtener todos los usuarios
-app.get("/users", (req, res) => {
-  fs.readFile(
-    path.join(__dirname, "data", "users.json"),
-    "utf8",
-    (err, data) => {
-      if (err) {
-        return res.status(500).json({ message: "Error al leer los usuarios" });
-      }
-      const users = JSON.parse(data);
-      res.json(users);
-    }
-  );
+mongoose
+  .connect("mongodb://localhost:27017/aroundb", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("🔥 Conectado a MongoDB"))
+  .catch((err) => console.error("❌ Error al conectar a MongoDB:", err));
+
+app.use(express.json()); // Middleware para recibir JSON
+
+// Middleware de autorización temporal
+app.use((req, res, next) => {
+  req.user = {
+    _id: "5d8b8592978f8bd833ca8133", // Reemplaza con el _id real del usuario de prueba
+  };
+  next();
 });
 
-// Ruta para obtener todas las tarjetas
-app.get("/cards", (req, res) => {
-  fs.readFile(
-    path.join(__dirname, "data", "cards.json"),
-    "utf8",
-    (err, data) => {
-      if (err) {
-        return res.status(500).json({ message: "Error al leer las tarjetas" });
-      }
-      const cards = JSON.parse(data);
-      res.json(cards);
-    }
-  );
-});
+// 📌 Usar las rutas de usuarios y tarjetas desde `routes/`
+app.use("/users", userRoutes);
+app.use("/cards", cardRoutes);
 
-// Ruta para obtener un usuario por ID
-app.get("/users/:id", (req, res) => {
-  const { id } = req.params;
-  fs.readFile(
-    path.join(__dirname, "data", "users.json"),
-    "utf8",
-    (err, data) => {
-      if (err) {
-        return res.status(500).json({ message: "Error al leer los usuarios" });
-      }
-      const users = JSON.parse(data);
-      const user = users.find((u) => u.id === id);
-      if (!user) {
-        return res.status(404).json({ message: "ID de usuario no encontrado" });
-      }
-      res.json(user);
-    }
-  );
-});
-
-// Ruta para manejar recursos no encontrados
+// 📌 Ruta para manejar recursos no encontrados
 app.use((req, res) => {
   res.status(404).json({ message: "Recurso solicitado no encontrado" });
 });
 
-// Iniciar el servidor en el puerto 3000
+// 📌 Iniciar el servidor en el puerto 3000
 app.listen(PORT, () => {
-  console.log(`Servidor escuchando en el puerto ${PORT}`);
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
